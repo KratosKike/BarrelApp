@@ -1,4 +1,106 @@
-import { useState } from 'react'
+import React, { useState, useEffect } from 'react';
+import { db } from './firebaseConfig';
+import { collection, query, orderBy, onSnapshot, doc, updateDoc } from 'firebase/firestore';
+import Login from './components/Login';
+import ClientOrder from './components/ClientOrder';
+import KitchenView from './components/KitchenView';
+
+export default function App() {
+  const [orders, setOrders] = useState([]);
+  const [userRole, setUserRole] = useState(() => {
+    return localStorage.getItem('resto_user_role') || null;
+  });
+
+  // Escuchar la base de datos de Firebase en tiempo real
+  useEffect(() => {
+    if (!userRole) return;
+
+    // Crear la consulta ordenada por fecha de creación
+    const q = query(collection(db, 'pedidos'), orderBy('created_at', 'asc'));
+
+    // onSnapshot se encarga de escuchar los cambios en tiempo real automáticamente
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const formattedOrders = snapshot.docs.map(docSnap => {
+        const data = docSnap.data();
+        return {
+          id: docSnap.id, // ID autogenerado de Firebase
+          table: data.table_number,
+          items: data.items,
+          status: data.status,
+          time: data.created_at ? new Date(data.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''
+        };
+      });
+      setOrders(formattedOrders);
+    }, (error) => {
+      console.error("Error al escuchar Firestore: ", error);
+    });
+
+    // Desconectar el escuchador en tiempo real si el componente se desmonta
+    return () => unsubscribe();
+  }, [userRole]);
+
+  const handleLoginSuccess = (role) => {
+    setUserRole(role);
+    localStorage.setItem('resto_user_role', role);
+  };
+
+  const handleLogout = () => {
+    setUserRole(null);
+    localStorage.removeItem('resto_user_role');
+  };
+
+  // Función para cambiar el estado del pedido en Firebase
+  const handleCompleteOrder = async (id) => {
+    try {
+      const pedidoRef = doc(db, 'pedidos', id);
+      await updateDoc(pedidoRef, { status: 'Completado' });
+    } catch (error) {
+      alert('Error al actualizar el pedido: ' + error.message);
+    }
+  };
+
+  if (!userRole) {
+    return <Login onLoginSuccess={handleLoginSuccess} />;
+  }
+
+  return (
+    <div style={styles.container}>
+      <header style={styles.header}>
+        <div>
+          <h1>🍽️ RestoFlow Staff App (Firebase)</h1>
+          <p style={{ margin: 0, color: '#666' }}>
+            Panel activo: <strong>{userRole === 'waiter' ? 'Mesero' : 'Cocina'}</strong>
+          </p>
+        </div>
+        <button onClick={handleLogout} style={styles.logoutBtn}>
+          Cerrar Sesión
+        </button>
+      </header>
+
+      <main style={styles.mainLayout}>
+        {userRole === 'waiter' && <ClientOrder />}
+        {userRole === 'kitchen' && (
+          <KitchenView orders={orders} onCompleteOrder={handleCompleteOrder} />
+        )}
+      </main>
+    </div>
+  );
+}
+
+const styles = {
+  container: { fontFamily: 'Segoe UI, sans-serif', padding: '20px', backgroundColor: '#f4f6f8', minHeight: '100vh' },
+  header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #ddd', paddingBottom: '10px', marginBottom: '20px' },
+  logoutBtn: { padding: '8px 16px', background: '#6c757d', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' },
+  mainLayout: { display: 'grid', gridTemplateColumns: '1fr', gap: '20px', maxWidth: '800px', margin: '0 auto' }
+};
+
+
+
+
+
+
+
+/*import { useState } from 'react'
 import reactLogo from './assets/react.svg'
 import viteLogo from './assets/vite.svg'
 import heroImg from './assets/hero.png'
@@ -120,3 +222,4 @@ function App() {
 }
 
 export default App
+*/
