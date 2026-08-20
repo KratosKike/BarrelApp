@@ -14,7 +14,7 @@ export default function Login({ onLoginSuccess }) {
     setError('');
 
     // Validación de campos vacíos
-    if (!username || !password) {
+    if (!email || !password) {
       setError('Por favor, introduce tus credenciales.');
       return;
     }
