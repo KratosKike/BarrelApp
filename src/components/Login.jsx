@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
+import { auth } from '../firebaseConfig';
+import { signInWithEmailAndPassword } from 'firebase/auth';
 
 
 export default function Login({ onLoginSuccess }) {
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
 
@@ -16,13 +19,30 @@ export default function Login({ onLoginSuccess }) {
       return;
     }
 
-    // SIMULACIÓN DE AUTENTICACIÓN
-    if (username === 'mesero' && password === '1234') {
-      onLoginSuccess('waiter');
-    } else if (username === 'cocina' && password === '1234') {
-      onLoginSuccess('kitchen');
-    } else {
-      setError('Usuario o contraseña incorrectos. Usa (mesero/1234) o (cocina/1234).');
+    setLoading(true);
+
+    try {
+      // Iniciar sesión real en Firebase
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const userEmail = userCredential.user.email;
+
+      // Determinar el rol según el correo electrónico
+      if (userEmail.includes('repartidor@barriles.es')) {
+        onLoginSuccess('waiter');
+      } else if (userEmail.includes('pedir')) {
+        onLoginSuccess('kitchen');
+      } else {
+        setError('Usuario no autorizado para este sistema.');
+      }
+    } catch (err) {
+      // Traducir errores comunes de Firebase
+      if (err.code === 'auth/invalid-credential' || err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password') {
+        setError('Correo o contraseña incorrectos.');
+      } else {
+        setError('Error al iniciar sesión: ' + err.message);
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -32,18 +52,19 @@ export default function Login({ onLoginSuccess }) {
         <div style={styles.avatarContainer}>
           <span style={styles.avatarIcon}>🍽️</span>
         </div>
-        <h2 style={styles.title}>RestoFlow Staff</h2>
-        <p style={styles.subtitle}>Inicia sesión para acceder a tu panel</p>
+        <h2 style={styles.title}>Barriles Staff</h2>
+        <p style={styles.subtitle}>Inicia sesión con tu cuenta de empleado</p>
 
         <form onSubmit={handleSubmit} style={styles.form}>
           <div style={styles.inputGroup}>
-            <label style={styles.label}>Usuario</label>
+            <label style={styles.label}>Correo Electrónico</label>
             <input 
-              type="text" 
-              placeholder="Ej: mesero o cocina" 
-              value={username} 
-              onChange={(e) => setUsername(e.target.value)}
+              type="email" 
+              placeholder="ej: mesero@restoflow.com" 
+              value={email} 
+              onChange={(e) => setEmail(e.target.value)}
               style={styles.input}
+              disabled={loading}
             />
           </div>
 
@@ -55,13 +76,14 @@ export default function Login({ onLoginSuccess }) {
               value={password} 
               onChange={(e) => setPassword(e.target.value)}
               style={styles.input}
+              disabled={loading}
             />
           </div>
 
           {error && <p style={styles.errorText}>{error}</p>}
 
-          <button type="submit" style={styles.submitBtn}>
-            Ingresar al Sistema
+          <button type="submit" style={styles.submitBtn} disabled={loading}>
+            {loading ? 'Verificando...' : 'Ingresar al Sistema'}
           </button>
         </form>
       </div>

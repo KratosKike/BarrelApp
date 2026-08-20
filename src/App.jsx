@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { db } from './firebaseConfig';
 import { collection, query, orderBy, onSnapshot, doc, updateDoc } from 'firebase/firestore';
+import { auth } from './firebaseConfig';
+import { signOut } from 'firebase/auth';
 import Login from './components/Login';
 import ClientOrder from './components/ClientOrder';
 import KitchenView from './components/KitchenView';
@@ -44,11 +46,15 @@ export default function App() {
     localStorage.setItem('resto_user_role', role);
   };
 
-  const handleLogout = () => {
+ const handleLogout = async () => {
+  try {
+    await signOut(auth); // Cierra sesión en Firebase
     setUserRole(null);
     localStorage.removeItem('resto_user_role');
-  };
-
+  } catch (error) {
+    console.error("Error al cerrar sesión:", error);
+  }
+};
   // Función para cambiar el estado del pedido en Firebase
   const handleCompleteOrder = async (id) => {
     try {
