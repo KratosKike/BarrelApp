@@ -27,9 +27,9 @@ export default function Login({ onLoginSuccess }) {
       const userEmail = userCredential.user.email;
 
       // Determinar el rol según el correo electrónico
-      if (userEmail.includes('repartidor')) {
+      if (userEmail.includes('pedir')) {
         onLoginSuccess('waiter');
-      } else if (userEmail.includes('pedir')) {
+      } else if (userEmail.includes('repartidor')) {
         onLoginSuccess('kitchen');
       } else {
         setError('Usuario no autorizado para este sistema.');
