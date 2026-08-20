@@ -27,7 +27,7 @@ export default function Login({ onLoginSuccess }) {
       const userEmail = userCredential.user.email;
 
       // Determinar el rol según el correo electrónico
-      if (userEmail.includes('repartidor@barriles.es')) {
+      if (userEmail.includes('repartidor')) {
         onLoginSuccess('waiter');
       } else if (userEmail.includes('pedir')) {
         onLoginSuccess('kitchen');
