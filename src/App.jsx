@@ -4,8 +4,8 @@ import { collection, query, orderBy, onSnapshot, doc, updateDoc } from 'firebase
 import { auth } from './firebaseConfig';
 import { signOut } from 'firebase/auth';
 import Login from './components/Login';
-import ClientOrder from './components/ClientOrder';
-import KitchenView from './components/KitchenView';
+import ClientOrder from './components/PedidoCocina';
+import KitchenView from './components/EnvioCocina';
 
 export default function App() {
   const [orders, setOrders] = useState([]);
